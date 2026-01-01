@@ -2,6 +2,9 @@
 
 Supabase 데이터베이스를 사용하는 간단한 쇼핑 리스트 웹 애플리케이션입니다.
 
+## 데모
+https://shopping-listapp.vercel.app
+
 ## 기능
 
 - 쇼핑 아이템 추가
