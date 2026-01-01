@@ -202,7 +202,7 @@
         // Supabase 클라이언트 초기화
         const SUPABASE_URL = 'https://wndszbpmdnudqyewdjaz.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduZHN6YnBtZG51ZHF5ZXdkamF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMzAzNjYsImV4cCI6MjA4MjgwNjM2Nn0.MZmvRpT6Vg85-5lbrdpooaYUfwyeuBdS1CFkBEz1Rkk';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         class ShoppingList {
             constructor() {
@@ -228,7 +228,7 @@
 
             async loadItems() {
                 try {
-                    const { data, error } = await supabase
+                    const { data, error } = await supabaseClient
                         .from('shopping_items')
                         .select('*')
                         .order('created_at', { ascending: true });
@@ -250,7 +250,7 @@
                 }
 
                 try {
-                    const { data, error } = await supabase
+                    const { data, error } = await supabaseClient
                         .from('shopping_items')
                         .insert([{ text: text, checked: false }])
                         .select();
@@ -269,7 +269,7 @@
 
             async deleteItem(id) {
                 try {
-                    const { error } = await supabase
+                    const { error } = await supabaseClient
                         .from('shopping_items')
                         .delete()
                         .eq('id', id);
@@ -290,7 +290,7 @@
 
                 try {
                     const newCheckedState = !item.checked;
-                    const { error } = await supabase
+                    const { error } = await supabaseClient
                         .from('shopping_items')
                         .update({ checked: newCheckedState })
                         .eq('id', id);
