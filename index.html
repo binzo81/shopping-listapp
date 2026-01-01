@@ -197,10 +197,16 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Supabase 클라이언트 초기화
+        const SUPABASE_URL = 'https://wndszbpmdnudqyewdjaz.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_uxZgHjOP1TgLbhS3Pqaw4w_kszfBmL4';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         class ShoppingList {
             constructor() {
-                this.items = this.loadItems();
+                this.items = [];
                 this.itemInput = document.getElementById('itemInput');
                 this.addBtn = document.getElementById('addBtn');
                 this.shoppingList = document.getElementById('shoppingList');
@@ -208,7 +214,7 @@
                 this.init();
             }
 
-            init() {
+            async init() {
                 this.addBtn.addEventListener('click', () => this.addItem());
                 this.itemInput.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') {
@@ -216,19 +222,26 @@
                     }
                 });
 
+                await this.loadItems();
                 this.render();
             }
 
-            loadItems() {
-                const stored = localStorage.getItem('shoppingList');
-                return stored ? JSON.parse(stored) : [];
+            async loadItems() {
+                try {
+                    const { data, error } = await supabase
+                        .from('shopping_items')
+                        .select('*')
+                        .order('created_at', { ascending: true });
+
+                    if (error) throw error;
+                    this.items = data || [];
+                } catch (error) {
+                    console.error('데이터 로드 실패:', error);
+                    alert('데이터를 불러오는데 실패했습니다.');
+                }
             }
 
-            saveItems() {
-                localStorage.setItem('shoppingList', JSON.stringify(this.items));
-            }
-
-            addItem() {
+            async addItem() {
                 const text = this.itemInput.value.trim();
 
                 if (text === '') {
@@ -236,31 +249,59 @@
                     return;
                 }
 
-                const item = {
-                    id: Date.now(),
-                    text: text,
-                    checked: false
-                };
+                try {
+                    const { data, error } = await supabase
+                        .from('shopping_items')
+                        .insert([{ text: text, checked: false }])
+                        .select();
 
-                this.items.push(item);
-                this.saveItems();
-                this.itemInput.value = '';
-                this.itemInput.focus();
-                this.render();
-            }
+                    if (error) throw error;
 
-            deleteItem(id) {
-                this.items = this.items.filter(item => item.id !== id);
-                this.saveItems();
-                this.render();
-            }
-
-            toggleItem(id) {
-                const item = this.items.find(item => item.id === id);
-                if (item) {
-                    item.checked = !item.checked;
-                    this.saveItems();
+                    this.items.push(data[0]);
+                    this.itemInput.value = '';
+                    this.itemInput.focus();
                     this.render();
+                } catch (error) {
+                    console.error('아이템 추가 실패:', error);
+                    alert('아이템을 추가하는데 실패했습니다.');
+                }
+            }
+
+            async deleteItem(id) {
+                try {
+                    const { error } = await supabase
+                        .from('shopping_items')
+                        .delete()
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    this.items = this.items.filter(item => item.id !== id);
+                    this.render();
+                } catch (error) {
+                    console.error('아이템 삭제 실패:', error);
+                    alert('아이템을 삭제하는데 실패했습니다.');
+                }
+            }
+
+            async toggleItem(id) {
+                const item = this.items.find(item => item.id === id);
+                if (!item) return;
+
+                try {
+                    const newCheckedState = !item.checked;
+                    const { error } = await supabase
+                        .from('shopping_items')
+                        .update({ checked: newCheckedState })
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    item.checked = newCheckedState;
+                    this.render();
+                } catch (error) {
+                    console.error('아이템 상태 변경 실패:', error);
+                    alert('아이템 상태를 변경하는데 실패했습니다.');
                 }
             }
 
